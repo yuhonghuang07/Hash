@@ -1,5 +1,6 @@
 #include "hash.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define LARGO_DEFECTO 100
 
@@ -36,7 +37,8 @@ hash_campo_t* crear_campo(const char* clave, void* dato){
 	if (!campo) return NULL; 
 	campo->clave = strdup(clave);
 	campo->dato = dato;
-	campo->estado = 1; 
+	campo->estado = LIBRE;
+	return campo; 
 }
 
 void destruir_campo(hash_campo_t* campo){
@@ -57,6 +59,7 @@ hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
 		free(hash);
 		return NULL;
 	}
+	return hash;
 }
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
@@ -84,4 +87,60 @@ size_t hash_cantidad(const hash_t *hash){
 
 void hash_destruir(hash_t *hash){
 
+}
+
+typedef struct hash_iter {
+	hash_t* hash;
+	int posicion;
+
+
+} hash_iter_t;
+
+hash_iter_t *hash_iter_crear(const hash_t *hash){
+	if(!hash){
+		return NULL;
+	}
+	hash_iter_t* iter=malloc(sizeof(hash_iter_t));
+	if(!iter){
+		return NULL;
+	}
+	iter->hash=(hash_t*)hash;
+	iter->posicion=0;
+	while(iter->hash->cantidad>iter->posicion){
+		if(iter->hash->tabla[iter->posicion].estado==OCUPADO){
+			break;
+		}
+		iter->posicion++;
+	}
+
+	return iter;
+}
+bool hash_iter_avanzar(hash_iter_t *iter){
+	if(!iter){
+		return false;
+	}
+	iter->posicion++;
+	while(iter->hash->cantidad>iter->posicion){
+		if(iter->hash->tabla[iter->posicion].estado==OCUPADO){
+			return true;
+		}
+		iter->posicion++;
+	}
+	return false;
+}
+const char *hash_iter_ver_actual(const hash_iter_t *iter){
+	if(!iter){
+		return NULL;
+	}
+	return(iter->hash->tabla[iter->posicion].clave);
+}
+bool hash_iter_al_final(const hash_iter_t *iter){
+	if(!iter){
+		return false;
+	}
+	return(iter->posicion==iter->hash->cantidad);
+
+}
+void hash_iter_destruir(hash_iter_t* iter){
+	free(iter);
 }
