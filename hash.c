@@ -1,18 +1,24 @@
 #include "hash.h"
 #include <stdlib.h>
 
-#define TAM_DEFECTO 100
+#define LARGO_DEFECTO 100
 
-typedef struct celda {
-	const char* clave;
-	void* dato;
-	int estado;
-} celda_t;
+typedef enum estado {LIBRE, OCUPADO, BORRADO} estado_t;
+
+typedef struct hash_campo {
+    char *clave;
+    void *dato;
+    estado_t estado; 
+
+} hash_campo_t;
 
 typedef struct hash {
-    size_t tam;
-    struct celda_t** tabla;
-} lista_t;
+    size_t cantidad;                  
+    size_t largo;                     
+    size_t carga;                     
+    hash_campo_t *tabla; 
+    hash_destruir_dato_t destruir_dato; 
+} hash_t;
 
 /*
 typedef struct hash_iter {
@@ -22,19 +28,20 @@ typedef struct hash_iter {
 */
 
 /* *****************************************************************
- *                    PRIMITIVAS DE LA CELDA
+ *                    PRIMITIVAS DEL CAMPO
  * *****************************************************************/
 
-celda_t* crear_celda(const char* clave, void* dato){ 
-	celda_t* celda = malloc(sizeof(celda_t)); 
-	if (!celda) return NULL; 
-	celda->clave = strdup(clave);
-	celda->dato = dato;
-	celda->estado = 1; 
+hash_campo_t* crear_campo(const char* clave, void* dato){ 
+	hash_campo_t* campo = malloc(sizeof(hash_campo_t)); 
+	if (!campo) return NULL; 
+	campo->clave = strdup(clave);
+	campo->dato = dato;
+	campo->estado = 1; 
 }
 
-void destruir_celda(celda_t* celda){
-	free(celda);
+void destruir_campo(hash_campo_t* campo){
+	free(campo->clave);
+	free(campo);
 }
 
 /* *****************************************************************
@@ -44,14 +51,37 @@ void destruir_celda(celda_t* celda){
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
 	hash_t* hash = malloc(sizeof(hash_t));
 	if (!hash) return NULL;
-	hash->tabla = malloc(sizeof(celda_t*)*TAM_DEFECTO);
+	hash->largo = LARGO_DEFECTO;
+	hash->tabla = malloc(sizeof(hash_campo_t*)*hash->largo);
 	if (hash->tabla){
 		free(hash);
 		return NULL;
 	}
-	hash->tam = TAM_DEFECTO;
 }
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
-	celda_t* celda = crear_celda(clave, dato);
+	hash_campo_t* campo = crear_campo(clave, dato);
+	if (!campo)
+		return false;
+
+}
+
+void *hash_borrar(hash_t *hash, const char *clave){
+
+}
+
+void *hash_obtener(const hash_t *hash, const char *clave){
+
+}
+
+bool hash_pertenece(const hash_t *hash, const char *clave){
+
+}
+
+size_t hash_cantidad(const hash_t *hash){
+
+}
+
+void hash_destruir(hash_t *hash){
+
 }
