@@ -133,8 +133,11 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	free(hash->tabla[posicion].clave);
 	hash->tabla[posicion].estado=BORRADO;
 	hash->cantidad--;
-	if (hash->carga/hash->largo < 0.35){
-		hash_redimensionar(hash, hash->largo/2);
+	if(hash->largo>LARGO_DEFECTO){
+		if(hash->carga/hash->largo < 0.35){
+			hash_redimensionar(hash, hash->largo/2);
+		}
+
 	}
 	return dato;
 
