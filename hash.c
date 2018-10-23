@@ -58,14 +58,7 @@ int BKDRHash(char *str){
 hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo);
 
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
-	hash_t* hash = _hash_crear(destruir_dato, LARGO_DEFECTO);
-	if (!hash) return NULL;
-	for (size_t i=0; i<hash->largo; i++){
-		hash->tabla[i].estado=LIBRE;
-	}
-	hash->cantidad = 0;
-	hash->carga = 0;
-	return hash;
+	return _hash_crear(destruir_dato, LARGO_DEFECTO);
 }
 
 hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
@@ -77,15 +70,18 @@ hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 		free(hash);
 		return NULL;
 	}
+	for (size_t i=0; i<hash->largo; i++){
+		hash->tabla[i].estado=LIBRE;
+	}
 	hash->destruir_dato = destruir_dato;
+	hash->cantidad = 0;
+	hash->carga = 0;
 	return hash;
 }
 
-bool hash_redimensionar(hash_t* hash,size_t largo){
+bool hash_redimensionar(hash_t* hash, size_t largo){
 	hash_t* hash_nuevo = _hash_crear(hash->destruir_dato, largo);
 	if (!hash_nuevo) return false;
-	hash_nuevo->cantidad = hash->cantidad;
-	hash_nuevo->carga = hash->cantidad;
 	for (int posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
 			void* dato = hash->tabla[posicion].dato;
@@ -93,8 +89,7 @@ bool hash_redimensionar(hash_t* hash,size_t largo){
 			hash_guardar(hash_nuevo, clave, dato);
 		}
 	}
-	free(hash->tabla);
-	free(hash);
+	hash_destruir(hash);
 	hash = hash_nuevo;
 	return true;
 }
