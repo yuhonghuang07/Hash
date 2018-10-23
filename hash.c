@@ -72,7 +72,7 @@ hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 	hash_t* hash = malloc(sizeof(hash_t));
 	if (!hash) return NULL;
 	hash->largo = largo;
-	hash->tabla = malloc(sizeof(hash_campo_t*)*hash->largo);
+	hash->tabla = malloc(sizeof(hash_campo_t)*hash->largo);
 	if (!hash->tabla){
 		free(hash);
 		return NULL;
@@ -105,17 +105,16 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 		if (!redimensiono) return false;
 	}
 	size_t posicion = hashing((char*)clave)%hash->largo;
-	if (hash->tabla[posicion].estado!=LIBRE){
-
-		while (hash->tabla[posicion].estado!=LIBRE){
-			if (hash->tabla[posicion].clave==clave){
-				hash->tabla[posicion].dato=dato;
-				return true;
-			}
-			posicion++;
-			if (posicion==hash->largo){
-				posicion=0;
-			}
+	while (hash->tabla[posicion].estado!=LIBRE){
+		if (strcmp(hash->tabla[posicion].clave,clave)==0){
+			if (hash->destruir_dato)
+				hash->destruir_dato(hash->tabla[posicion].dato);
+			hash->tabla[posicion].dato=dato;
+			return true;
+		}
+		posicion++;
+		if (posicion==hash->largo){
+			posicion=0;
 		}
 	}
 	hash->tabla[posicion].clave=strdup(clave);
@@ -126,6 +125,7 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	return true;
 }
 
+
 size_t obtener_posicion(const hash_t *hash, const char *clave);
 
 void *hash_borrar(hash_t *hash, const char *clave){
@@ -133,7 +133,8 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	if (posicion==-1)
 		return NULL;
 	void* dato = hash->tabla[posicion].dato;
-	hash->destruir_dato(hash->tabla[posicion].dato);
+	if (hash->destruir_dato)
+		hash->destruir_dato(hash->tabla[posicion].dato);
 	free(hash->tabla[posicion].clave);
 	hash->tabla[posicion].estado=BORRADO;
 	hash->cantidad--;
@@ -150,7 +151,7 @@ size_t obtener_posicion(const hash_t *hash, const char *clave){
 		return -1;
 	bool pertenece = false;
 	while (hash->tabla[posicion].estado!=LIBRE ){
-		if (hash->tabla[posicion].estado==OCUPADO && hash->tabla[posicion].clave==clave){
+		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0){
 			pertenece = true;
 			break;
 		}
@@ -183,7 +184,8 @@ size_t hash_cantidad(const hash_t *hash){
 void hash_destruir(hash_t *hash){
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
-			hash->destruir_dato(hash->tabla[posicion].dato);
+			if (hash->destruir_dato)
+				hash->destruir_dato(hash->tabla[posicion].dato);
 			free(hash->tabla[posicion].clave);
 		}
 	}
@@ -216,9 +218,15 @@ bool hash_iter_avanzar(hash_iter_t *iter){
 	return false;
 }
 
+
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
-	return(iter->hash->tabla[iter->posicion].clave);
+	if (hash_iter_al_final(iter)){
+		return NULL;
+	}
+	return (iter->hash->tabla[iter->posicion].clave);
 }
+
+
 
 bool hash_iter_al_final(const hash_iter_t *iter){
 	return(iter->posicion==iter->hash->largo);
