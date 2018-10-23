@@ -1,6 +1,8 @@
-#include "hash.h"
-#include <stdlib.h>
+#define _POSIX_C_SOURCE 200809L
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "hash.h"
 
 #define LARGO_DEFECTO 101
 
@@ -23,9 +25,7 @@ typedef struct hash {
 
 typedef struct hash_iter {
 	hash_t* hash;
-	int posicion;
-
-
+	size_t posicion;
 } hash_iter_t;
 
 int hashing(char* cadena){
@@ -55,37 +55,56 @@ int BKDRHash(char *str){
  *                    PRIMITIVAS DEL HASH
  * *****************************************************************/
 
+hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo);
+
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
+	hash_t* hash = _hash_crear(destruir_dato, LARGO_DEFECTO);
+	if (!hash) return NULL;
+	for (size_t i=0; i<hash->largo; i++){
+		hash->tabla[i].estado=LIBRE;
+	}
+	hash->cantidad = 0;
+	hash->carga = 0;
+	return hash;
+}
+
+hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 	hash_t* hash = malloc(sizeof(hash_t));
 	if (!hash) return NULL;
-	hash->largo = LARGO_DEFECTO;
+	hash->largo = largo;
 	hash->tabla = malloc(sizeof(hash_campo_t*)*hash->largo);
-	if (hash->tabla){
+	if (!hash->tabla){
 		free(hash);
 		return NULL;
 	}
-	for (int i=0; i<hash->largo; i++){
-		hash->tabla[i].estado=LIBRE;
-	}
-
-	hash->cantidad = 0;
-	hash->carga = 0;
 	hash->destruir_dato = destruir_dato;
 	return hash;
 }
-bool hash_redimensionar(hash_t hash,size_t capacidad){
-	void* hash_nuevo= realloc(hash->tabla, capacidad * sizeof(void*));
-	if(datos_nuevo==NULL)
-		return false;
-	pila->datos=datos_nuevo;
+
+bool hash_redimensionar(hash_t* hash,size_t largo){
+	hash_t* hash_nuevo = _hash_crear(hash->destruir_dato, largo);
+	if (!hash_nuevo) return false;
+	hash_nuevo->cantidad = hash->cantidad;
+	hash_nuevo->carga = hash->cantidad;
+	for (int posicion=0; posicion<hash->largo; posicion++){
+		if (hash->tabla[posicion].estado==OCUPADO){
+			void* dato = hash->tabla[posicion].dato;
+			char* clave = hash->tabla[posicion].clave;
+			hash_guardar(hash_nuevo, clave, dato);
+		}
+	}
+	free(hash->tabla);
+	free(hash);
+	hash = hash_nuevo;
 	return true;
 }
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
-
-	/* PONER REDIMENSIONAR */
-
-	int posicion = hashing((char*)clave)%hash->largo;
+	if (hash->carga/hash->largo > 0.75){
+		bool redimensiono = hash_redimensionar(hash, hash->largo*2);
+		if (!redimensiono) return false;
+	}
+	size_t posicion = hashing((char*)clave)%hash->largo;
 	if (hash->tabla[posicion].estado!=LIBRE){
 
 		while (hash->tabla[posicion].estado!=LIBRE){
@@ -107,10 +126,10 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	return true;
 }
 
-int obtener_posicion(const hash_t *hash, const char *clave);
+size_t obtener_posicion(const hash_t *hash, const char *clave);
 
 void *hash_borrar(hash_t *hash, const char *clave){
-	int posicion = obtener_posicion(hash,clave);
+	size_t posicion = obtener_posicion(hash,clave);
 	if (posicion==-1)
 		return NULL;
 	void* dato = hash->tabla[posicion].dato;
@@ -118,12 +137,15 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	free(hash->tabla[posicion].clave);
 	hash->tabla[posicion].estado=BORRADO;
 	hash->cantidad--;
+	if (hash->carga/hash->largo < 0.35){
+		hash_redimensionar(hash, hash->largo/2);
+	}
 	return dato;
 
 }
 
-int obtener_posicion(const hash_t *hash, const char *clave){
-	int posicion = hashing((char*)clave)%hash->largo;
+size_t obtener_posicion(const hash_t *hash, const char *clave){
+	size_t posicion = hashing((char*)clave)%hash->largo;
 	if (hash->tabla[posicion].estado==LIBRE)
 		return -1;
 	bool pertenece = false;
@@ -143,7 +165,7 @@ int obtener_posicion(const hash_t *hash, const char *clave){
 }
 
 void *hash_obtener(const hash_t *hash, const char *clave){
-	int posicion = obtener_posicion(hash, clave);
+	size_t posicion = obtener_posicion(hash, clave);
 	if (posicion==-1)
 		return NULL;
 	return hash->tabla[posicion].dato;
@@ -159,7 +181,7 @@ size_t hash_cantidad(const hash_t *hash){
 }
 
 void hash_destruir(hash_t *hash){
-	for (int posicion=0; posicion<hash->largo; posicion++){
+	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
 			hash->destruir_dato(hash->tabla[posicion].dato);
 			free(hash->tabla[posicion].clave);
@@ -171,23 +193,13 @@ void hash_destruir(hash_t *hash){
 
 
 
-hash_iter_t *hash_iter_crear(const hash_t *hash){
-	if(!hash){
-		return NULL;
-	}
-	hash_iter_t* iter=malloc(sizeof(hash_iter_t));
-	if(!iter){
-		return NULL;
-	}
+hash_iter_t* hash_iter_crear(const hash_t *hash){
+	if (!hash) return NULL;
+	hash_iter_t* iter = malloc(sizeof(hash_iter_t));
+	if(!iter) return NULL;
 	iter->hash=(hash_t*)hash;
-	iter->posicion=0;
-	while(iter->hash->largo>iter->posicion){
-		if(iter->hash->tabla[iter->posicion].estado==OCUPADO){
-			break;
-		}
-		iter->posicion++;
-	}
-
+	iter->posicion=-1;
+	hash_iter_avanzar(iter);
 	return iter;
 }
 bool hash_iter_avanzar(hash_iter_t *iter){
