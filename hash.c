@@ -70,8 +70,8 @@ hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 		free(hash);
 		return NULL;
 	}
-	for (size_t i=0; i<hash->largo; i++){
-		hash->tabla[i].estado=LIBRE;
+	for (size_t posicion=0; posicion<hash->largo; posicion++){
+		hash->tabla[posicion].estado=LIBRE;
 	}
 	hash->destruir_dato = destruir_dato;
 	hash->cantidad = 0;
@@ -84,13 +84,14 @@ bool hash_redimensionar(hash_t* hash, size_t largo){
 	if (!hash_nuevo) return false;
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
-			hash_guardar(hash_nuevo, hash->tabla[posicion].clave, hash->tabla[posicion].dato);
+			char* clave = hash->tabla[posicion].clave;
+			hash_guardar(hash_nuevo, clave, hash->tabla[posicion].dato);
+			free(clave);
 		}
 	}
-	hash->destruir_dato = NULL;
-	hash_destruir(hash);
+	free(hash->tabla);
+	free(hash);
 	hash = hash_nuevo;
-	hash_nuevo = NULL;
 	return true;
 }
 
