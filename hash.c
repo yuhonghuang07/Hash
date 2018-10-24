@@ -120,17 +120,30 @@ hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 }
 
 hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
-	hash_t* hash_nuevo = _hash_crear(hash->destruir_dato, largo_nuevo);
-	if (!hash_nuevo) return NULL;
+	hash_campo_t* tabla_nueva=malloc(sizeof(hash_campo_t)*largo_nuevo);
+	if (!tabla_nueva) return NULL;
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
-			hash_guardar(hash_nuevo, hash->tabla[posicion].clave, hash->tabla[posicion].dato);
+			size_t posicion_nueva = hashing(hash->tabla[posicion].clave)%largo_nuevo;
+			while (hash->tabla[posicion].estado!=LIBRE){
+				posicion_nueva++;
+				if (posicion_nueva>=largo_nuevo){
+					posicion_nueva=0;
+				}
+			}
+			tabla_nueva[posicion_nueva].estado=OCUPADO;
+			tabla_nueva[posicion_nueva].dato=hash->tabla[posicion].dato;
+			tabla_nueva[posicion_nueva].clave=hash->tabla[posicion].clave;
+
 			free(hash->tabla[posicion].clave);
 		}
 	}
+
 	free(hash->tabla);
-	free(hash);
-	return hash_nuevo;
+	hash->largo=largo_nuevo;
+	hash->tabla=tabla_nueva;
+	hash->carga=hash->cantidad;
+	return hash;
 }
 
 size_t obtener_posicion(const hash_t *hash, const char *clave);
