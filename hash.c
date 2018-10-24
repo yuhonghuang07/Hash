@@ -79,9 +79,9 @@ hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 	return hash;
 }
 
-bool hash_redimensionar(hash_t* hash, size_t largo_nuevo){
+hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 	hash_t* hash_nuevo = _hash_crear(hash->destruir_dato, largo_nuevo);
-	if (!hash_nuevo) return false;
+	if (!hash_nuevo) return NULL;
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
 			hash_guardar(hash_nuevo, hash->tabla[posicion].clave, hash->tabla[posicion].dato);
@@ -90,16 +90,14 @@ bool hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 	}
 	free(hash->tabla);
 	free(hash);
-	hash = hash_nuevo;
-	return true;
+	return hash_nuevo;
 }
 
 size_t obtener_posicion(const hash_t *hash, const char *clave);
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	if (hash->carga*100/hash->largo > 75){
-		bool redimensiono = hash_redimensionar(hash, hash->largo*2);
-		if (!redimensiono) return false;
+		hash = hash_redimensionar(hash, hash->largo*2);
 	}
 	size_t posicion = obtener_posicion(hash, clave);
 	if (hash->tabla[posicion].estado==OCUPADO){
@@ -126,7 +124,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	hash->cantidad--;
 	if(hash->largo>LARGO_DEFECTO){
 		if(hash->carga*100/hash->largo < 35){
-			hash_redimensionar(hash, hash->largo/2);
+			hash = hash_redimensionar(hash, hash->largo/2);
 		}
 
 	}
