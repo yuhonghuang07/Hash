@@ -28,7 +28,7 @@ typedef struct hash_iter {
 	size_t posicion;
 } hash_iter_t;
 
-int hashing(char* cadena){
+int hashing(const char* cadena){
 	int b    = 378551;
 	int a    = 63689;
 	int hash = 0;
@@ -79,8 +79,8 @@ hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo){
 	return hash;
 }
 
-bool hash_redimensionar(hash_t* hash, size_t largo){
-	hash_t* hash_nuevo = _hash_crear(hash->destruir_dato, largo);
+bool hash_redimensionar(hash_t* hash, size_t largo_nuevo){
+	hash_t* hash_nuevo = _hash_crear(hash->destruir_dato, largo_nuevo);
 	if (!hash_nuevo) return false;
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
@@ -98,7 +98,7 @@ bool hash_redimensionar(hash_t* hash, size_t largo){
 size_t obtener_posicion(const hash_t *hash, const char *clave);
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
-	if (hash->carga/hash->largo > 0.75){
+	if (hash->carga*100/hash->largo > 75){
 		bool redimensiono = hash_redimensionar(hash, hash->largo*2);
 		if (!redimensiono) return false;
 	}
@@ -124,7 +124,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	hash->tabla[posicion].estado=BORRADO;
 	hash->cantidad--;
 	if(hash->largo>LARGO_DEFECTO){
-		if(hash->carga/hash->largo < 0.35){
+		if(hash->carga*100/hash->largo < 35){
 			hash_redimensionar(hash, hash->largo/2);
 		}
 
@@ -134,12 +134,12 @@ void *hash_borrar(hash_t *hash, const char *clave){
 }
 
 size_t obtener_posicion(const hash_t *hash, const char *clave){
-	size_t posicion = hashing((char*)clave)%hash->largo;
+	size_t posicion = hashing(clave)%hash->largo;
 	while (hash->tabla[posicion].estado!=LIBRE){
 		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0) //meter esta condicion al while
 			break;
 		posicion++;
-		if (posicion==hash->largo){
+		if (posicion>=hash->largo){
 			posicion=0;
 		}
 	}
