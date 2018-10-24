@@ -51,11 +51,11 @@ int BKDRHash(char *str){
 	return (hash & 0x7FFFFFFF);
 }
 
-/*int _raiz(int ini,int fin, int numero){
+size_t _raiz(size_t ini,size_t fin, size_t numero){
 	if(ini==fin){
 		return ini;
 	}
-	int medio=(ini+fin)/2;
+	size_t medio=(ini+fin)/2;
 	if(medio*medio==numero){
 		return medio;
 	}
@@ -64,21 +64,21 @@ int BKDRHash(char *str){
 	}
 	return _raiz(medio,fin-1,numero);
 }
-int raiz(int numero){
+size_t raiz(size_t numero){
 	if(numero<0){
 		return -1;
 	}
 	if(numero<4){
 		return 1;
 	}
-	int fin =numero;
-	int ini=0;
+	size_t fin =numero;
+	size_t ini=0;
 	return _raiz(ini,fin,numero);
 }
-int obtener_nuevo_primo(int primo){
-	int resultado=raiz(primo*2);
-	for(int i=primo*2;i;i++){
-		for(int j=2;j<=resultado+1;j++){
+size_t obtener_nuevo_largo(size_t primo){
+	size_t resultado=raiz(primo*2);
+	for(size_t i=primo*2;i;i++){
+		for(size_t j=2;j<=resultado+1;j++){
 			if(i%j==0){
 				break;
 			}
@@ -89,7 +89,7 @@ int obtener_nuevo_primo(int primo){
 		}
 	}
 	return 0;
-}*/
+}
 
 /* *****************************************************************
  *                    PRIMITIVAS DEL HASH
@@ -150,7 +150,8 @@ size_t obtener_posicion(const hash_t *hash, const char *clave);
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	if (hash->carga*100/hash->largo > 75){
-		hash = hash_redimensionar(hash, hash->largo*2);
+		size_t largo=obtener_nuevo_largo(hash->largo*2);
+		hash = hash_redimensionar(hash, largo);
 	}
 	size_t posicion = obtener_posicion(hash, clave);
 	if (hash->tabla[posicion].estado==OCUPADO){
@@ -177,7 +178,8 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	hash->cantidad--;
 	if(hash->largo>LARGO_DEFECTO){
 		if(hash->carga*100/hash->largo < 35){
-			hash = hash_redimensionar(hash, hash->largo/2);
+			size_t largo=obtener_nuevo_largo(hash->largo/2);			
+			hash = hash_redimensionar(hash, largo);
 		}
 
 	}
