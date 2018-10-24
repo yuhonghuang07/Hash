@@ -51,6 +51,46 @@ int BKDRHash(char *str){
 	return (hash & 0x7FFFFFFF);
 }
 
+/*int _raiz(int ini,int fin, int numero){
+	if(ini==fin){
+		return ini;
+	}
+	int medio=(ini+fin)/2;
+	if(medio*medio==numero){
+		return medio;
+	}
+	if(medio*medio>numero){
+		return _raiz(ini,medio-1,numero);
+	}
+	return _raiz(medio,fin-1,numero);
+}
+int raiz(int numero){
+	if(numero<0){
+		return -1;
+	}
+	if(numero<4){
+		return 1;
+	}
+	int fin =numero;
+	int ini=0;
+	return _raiz(ini,fin,numero);
+}
+int obtener_nuevo_primo(int primo){
+	int resultado=raiz(primo*2);
+	for(int i=primo*2;i;i++){
+		for(int j=2;j<=resultado+1;j++){
+			if(i%j==0){
+				break;
+			}
+			if(j==resultado+1){
+				return i;
+
+			}
+		}
+	}
+	return 0;
+}*/
+
 /* *****************************************************************
  *                    PRIMITIVAS DEL HASH
  * *****************************************************************/
