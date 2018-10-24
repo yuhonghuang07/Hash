@@ -84,9 +84,8 @@ bool hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 	if (!hash_nuevo) return false;
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
-			char* clave = hash->tabla[posicion].clave;
-			hash_guardar(hash_nuevo, clave, hash->tabla[posicion].dato);
-			free(clave);
+			hash_guardar(hash_nuevo, hash->tabla[posicion].clave, hash->tabla[posicion].dato);
+			free(hash->tabla[posicion].clave);
 		}
 	}
 	free(hash->tabla);
@@ -104,6 +103,8 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	}
 	size_t posicion = obtener_posicion(hash, clave);
 	if (hash->tabla[posicion].estado==OCUPADO){
+		if (hash->destruir_dato)
+			hash->destruir_dato(hash->tabla[posicion].dato);
 		hash->tabla[posicion].dato=dato;
 		return true;
 	}
@@ -165,9 +166,9 @@ size_t hash_cantidad(const hash_t *hash){
 void hash_destruir(hash_t *hash){
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
+			free(hash->tabla[posicion].clave);
 			if (hash->destruir_dato)
 				hash->destruir_dato(hash->tabla[posicion].dato);
-			free(hash->tabla[posicion].clave);
 		}
 	}
 	free(hash->tabla);
@@ -185,6 +186,7 @@ hash_iter_t* hash_iter_crear(const hash_t *hash){
 	hash_iter_avanzar(iter);
 	return iter;
 }
+
 bool hash_iter_avanzar(hash_iter_t *iter){
 	if(hash_iter_al_final(iter)){
 		return false;
