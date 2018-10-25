@@ -130,9 +130,6 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
 			size_t posicion_nueva = hashing(hash->tabla[posicion].clave)%largo_nuevo;
-			if(tabla_nueva[posicion_nueva].estado!=LIBRE){
-				posicion_nueva= hashing_(hash->tabla[posicion].clave)%largo_nuevo;
-			}
 			while (tabla_nueva[posicion_nueva].estado!=LIBRE){
 				posicion_nueva++;
 				if (posicion_nueva>=largo_nuevo){
@@ -196,9 +193,6 @@ void *hash_borrar(hash_t *hash, const char *clave){
 
 size_t obtener_posicion(const hash_t *hash, const char *clave){
 	size_t posicion = hashing(clave)%hash->largo;
-	if(hash->tabla[posicion].estado!=LIBRE){
-		posicion=hashing_(clave)%hash->largo;
-	}
 	while (hash->tabla[posicion].estado!=LIBRE){
 		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0) //meter esta condicion al while
 			break;
