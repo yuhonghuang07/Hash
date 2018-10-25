@@ -84,6 +84,17 @@ int hashing(const char *str){
 	return (hash & 0x7FFFFFFF);
 }
 
+
+//! this one is called djb2
+unsigned long djb2(char* str) {
+  unsigned long hash = 5381;
+  int c;
+  while ((c = *str++) != 0)
+    hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  return hash;
+}
+
+
 size_t _raiz(size_t ini,size_t fin, size_t numero){
 	if(ini==fin){
 		return ini;
@@ -224,7 +235,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 
 size_t obtener_posicion(const hash_t *hash, const char *clave){
 
-	size_t posicion=hashing(clave)%hash->largo;
+	size_t posicion=sdbmhash((char*)clave)%hash->largo;
 	while (hash->tabla[posicion].estado!=LIBRE){
 		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0) //meter esta condicion al while
 			break;
