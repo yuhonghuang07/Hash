@@ -5,6 +5,10 @@
 #include "hash.h"
 
 #define LARGO_DEFECTO 101
+#define FACTOR_CARGA_MAXIMA 50
+#define FACTOR_CARGA_MINIMA 35
+#define FUNCION_HASH sdbmhash
+#define CASTEO_FUNCION_HASH char*
 
 typedef enum estado {LIBRE, OCUPADO, BORRADO} estado_t;
 
@@ -72,6 +76,18 @@ unsigned int hashing_(const char *str)
 
     return (hash & 0x7FFFFFFF);
 }  
+
+
+
+unsigned long djb2a(unsigned char *str) {
+        unsigned long hash = 5381;
+        int c;
+        while ((c = *str++))
+                hash = hash * 33 ^ c;
+        return hash;
+}
+
+
 /*BKDRHash*/
 int hashing(const char *str){
 	int seed = 13131313; // 31 131 1313 13131 131313 etc..
@@ -93,6 +109,8 @@ unsigned long djb2(char* str) {
     hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   return hash;
 }
+
+
 
 
 size_t _raiz(size_t ini,size_t fin, size_t numero){
@@ -172,7 +190,7 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
-			size_t posicion_nueva = hashing(hash->tabla[posicion].clave)%largo_nuevo;
+			size_t posicion_nueva = FUNCION_HASH((CASTEO_FUNCION_HASH)hash->tabla[posicion].clave)%largo_nuevo;
 
 			while (tabla_nueva[posicion_nueva].estado!=LIBRE){
 				posicion_nueva++;
@@ -196,7 +214,7 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 size_t obtener_posicion(const hash_t *hash, const char *clave);
 
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
-	if (hash->carga*100/hash->largo > 75){
+	if (hash->carga*100/hash->largo > FACTOR_CARGA_MAXIMA){
 		size_t largo=obtener_nuevo_largo(hash->largo*2);
 		hash = hash_redimensionar(hash, largo);
 	}
@@ -224,7 +242,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	hash->tabla[posicion].estado=BORRADO;
 	hash->cantidad--;
 	if(hash->largo>LARGO_DEFECTO){
-		if(hash->carga*100/hash->largo < 35){
+		if(hash->carga*100/hash->largo < FACTOR_CARGA_MINIMA){
 			size_t largo=obtener_nuevo_largo(hash->largo/2);			
 			hash = hash_redimensionar(hash, largo);
 		}
@@ -235,7 +253,7 @@ void *hash_borrar(hash_t *hash, const char *clave){
 
 size_t obtener_posicion(const hash_t *hash, const char *clave){
 
-	size_t posicion=sdbmhash((char*)clave)%hash->largo;
+	size_t posicion=FUNCION_HASH((CASTEO_FUNCION_HASH)clave)%hash->largo;
 	while (hash->tabla[posicion].estado!=LIBRE){
 		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0) //meter esta condicion al while
 			break;
