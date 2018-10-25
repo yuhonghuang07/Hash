@@ -18,17 +18,18 @@ typedef struct hash_campo {
 typedef struct hash {
 	size_t cantidad;                  
 	size_t largo;                     
-	size_t carga;                     
+	size_t carga;                    
 	hash_campo_t *tabla; 
 	hash_destruir_dato_t destruir_dato; 
+
 } hash_t;
 
 typedef struct hash_iter {
 	hash_t* hash;
 	size_t posicion;
 } hash_iter_t;
-
-int hashing_(const char* cadena){
+/*RSHash*/
+int hashing__(const char* cadena){
 	int b    = 378551;
 	int a    = 63689;
 	int hash = 0;
@@ -39,6 +40,38 @@ int hashing_(const char* cadena){
 	}
 	return (hash & 0x7FFFFFFF);
 }
+
+/*SDBMHash*/
+size_t sdbmhash(const  char* cadena)  
+{  
+    size_t hash = 0; 
+    while (*cadena)  
+    {  
+        hash = 65599*hash + (*cadena++);        
+        //hash = (size_t)ch + (hash << 6) + (hash << 16) - hash;  
+    }  
+    return hash;  
+}
+/*APHash*/
+unsigned int hashing_(const char *str)
+{
+    unsigned int hash = 0;
+    int i;
+
+    for (i=0; *str; i++)
+    {
+        if ((i & 1) == 0)
+        {
+            hash ^= ((hash << 7) ^ (*str++) ^ (hash >> 3));
+        }
+        else
+        {
+            hash ^= (~((hash << 11) ^ (*str++) ^ (hash >> 5)));
+        }
+    }
+
+    return (hash & 0x7FFFFFFF);
+}  
 /*BKDRHash*/
 int hashing(const char *str){
 	int seed = 13131313; // 31 131 1313 13131 131313 etc..
@@ -127,9 +160,12 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 		tabla_nueva[i].clave=NULL;
 		tabla_nueva[i].dato=NULL;
 	}
+
+
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
 			size_t posicion_nueva = hashing(hash->tabla[posicion].clave)%largo_nuevo;
+
 			while (tabla_nueva[posicion_nueva].estado!=LIBRE){
 				posicion_nueva++;
 				if (posicion_nueva>=largo_nuevo){
@@ -192,7 +228,8 @@ void *hash_borrar(hash_t *hash, const char *clave){
 }
 
 size_t obtener_posicion(const hash_t *hash, const char *clave){
-	size_t posicion = hashing(clave)%hash->largo;
+
+	size_t posicion=hashing(clave)%hash->largo;
 	while (hash->tabla[posicion].estado!=LIBRE){
 		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0) //meter esta condicion al while
 			break;
