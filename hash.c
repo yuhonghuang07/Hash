@@ -157,10 +157,7 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 	if (!tabla_nueva) return NULL;
 	for(int i =0;i<largo_nuevo;i++){
 		tabla_nueva[i].estado=LIBRE;
-		tabla_nueva[i].clave=NULL;
-		tabla_nueva[i].dato=NULL;
 	}
-
 
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
@@ -175,7 +172,6 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 			tabla_nueva[posicion_nueva].estado=OCUPADO;
 			tabla_nueva[posicion_nueva].dato=(hash->tabla[posicion].dato);
 			tabla_nueva[posicion_nueva].clave=hash->tabla[posicion].clave;
-
 		}
 	}
 
@@ -224,7 +220,6 @@ void *hash_borrar(hash_t *hash, const char *clave){
 
 	}
 	return dato;
-
 }
 
 size_t obtener_posicion(const hash_t *hash, const char *clave){

@@ -27,3 +27,7 @@ clean:
 zip:
 	zip $(EXEC).zip $(CFILES) $(HFILES)
 
+script:
+	chmod +x tiempos_volumen.sh
+	./tiempos_volumen.sh ./pruebas
+
