@@ -6,7 +6,7 @@
 
 #define LARGO_DEFECTO 101
 #define FACTOR_CARGA_MAXIMA 50
-#define FACTOR_CARGA_MINIMA 35
+#define FACTOR_CARGA_MINIMA 10
 #define FUNCION_HASH sdbmhash
 #define CASTEO_FUNCION_HASH char*
 
@@ -159,6 +159,8 @@ size_t obtener_nuevo_largo(size_t primo){
 
 hash_t* _hash_crear(hash_destruir_dato_t destruir_dato, size_t largo);
 
+size_t obtener_posicion(hash_campo_t* tabla, const char *clave, size_t largo_tabla);
+
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
 	return _hash_crear(destruir_dato, LARGO_DEFECTO);
 }
@@ -190,14 +192,7 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 
 	for (size_t posicion=0; posicion<hash->largo; posicion++){
 		if (hash->tabla[posicion].estado==OCUPADO){
-			size_t posicion_nueva = FUNCION_HASH((CASTEO_FUNCION_HASH)hash->tabla[posicion].clave)%largo_nuevo;
-
-			while (tabla_nueva[posicion_nueva].estado!=LIBRE){
-				posicion_nueva++;
-				if (posicion_nueva>=largo_nuevo){
-					posicion_nueva=0;
-				}
-			}
+			size_t posicion_nueva = obtener_posicion(tabla_nueva, hash->tabla[posicion].clave, largo_nuevo);
 			tabla_nueva[posicion_nueva].estado=OCUPADO;
 			tabla_nueva[posicion_nueva].dato=(hash->tabla[posicion].dato);
 			tabla_nueva[posicion_nueva].clave=hash->tabla[posicion].clave;
@@ -211,14 +206,12 @@ hash_t* hash_redimensionar(hash_t* hash, size_t largo_nuevo){
 	return hash;
 }
 
-size_t obtener_posicion(const hash_t *hash, const char *clave);
-
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	if (hash->carga*100/hash->largo > FACTOR_CARGA_MAXIMA){
 		size_t largo=obtener_nuevo_largo(hash->largo*2);
 		hash = hash_redimensionar(hash, largo);
 	}
-	size_t posicion = obtener_posicion(hash, clave);
+	size_t posicion = obtener_posicion(hash->tabla, clave, hash->largo);
 	if (hash->tabla[posicion].estado==OCUPADO){
 		if (hash->destruir_dato)
 			hash->destruir_dato(hash->tabla[posicion].dato);
@@ -234,7 +227,7 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 }
 
 void *hash_borrar(hash_t *hash, const char *clave){
-	size_t posicion = obtener_posicion(hash,clave);
+	size_t posicion = obtener_posicion(hash->tabla,clave,hash->largo);
 	if (hash->tabla[posicion].estado==LIBRE)
 		return NULL;
 	void* dato = hash->tabla[posicion].dato;
@@ -251,14 +244,14 @@ void *hash_borrar(hash_t *hash, const char *clave){
 	return dato;
 }
 
-size_t obtener_posicion(const hash_t *hash, const char *clave){
+size_t obtener_posicion(hash_campo_t* tabla, const char *clave, size_t largo_tabla){
 
-	size_t posicion=FUNCION_HASH((CASTEO_FUNCION_HASH)clave)%hash->largo;
-	while (hash->tabla[posicion].estado!=LIBRE){
-		if (hash->tabla[posicion].estado==OCUPADO && strcmp(hash->tabla[posicion].clave,clave)==0) //meter esta condicion al while
+	size_t posicion=FUNCION_HASH((CASTEO_FUNCION_HASH)clave)%largo_tabla;
+	while (tabla[posicion].estado!=LIBRE){
+		if (tabla[posicion].estado==OCUPADO && strcmp(tabla[posicion].clave,clave)==0) //meter esta condicion al while
 			break;
 		posicion++;
-		if (posicion>=hash->largo){
+		if (posicion>=largo_tabla){
 			posicion=0;
 		}
 	}
@@ -266,14 +259,14 @@ size_t obtener_posicion(const hash_t *hash, const char *clave){
 }
 
 void *hash_obtener(const hash_t *hash, const char *clave){
-	size_t posicion = obtener_posicion(hash, clave);
+	size_t posicion = obtener_posicion(hash->tabla, clave, hash->largo);
 	if (hash->tabla[posicion].estado==LIBRE)
 		return NULL;
 	return hash->tabla[posicion].dato;
 }
 
 bool hash_pertenece(const hash_t *hash, const char *clave){
-	size_t posicion = obtener_posicion(hash, clave);
+	size_t posicion = obtener_posicion(hash->tabla, clave, hash->largo);
 	return hash->tabla[posicion].estado==OCUPADO;
 }
 
